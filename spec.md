@@ -96,3 +96,16 @@ following path: `/update-todo`.
 > It is also more efficient than including the path in the request body because
 > the server and intermediate infrastructure can route without parsing the
 > request body (this is a common complaint about JSON-RPC).
+
+### Input
+
+The operation input is expressed using the request body. The input is structured
+as a JSON object and should always be present even when there are no input
+parameters. The request should contain a content type header set to
+`application/json`.
+
+> JSON is human readable which makes it easy to work with in a variety of
+> settings. It is less performant than a binary representation like Protobuf but
+> we are biasing toward developer efficiency. Sending an empty object instead of
+> an empty request when there are no input parameters is also less performant
+> but simplifies implementation enough to prefer it on the first pass.
