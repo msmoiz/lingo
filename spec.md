@@ -43,11 +43,11 @@ often get marked with the same error code:
   application-specific error code.
 
 It also aims to address some of the shortcomings of existing RPC protocols. For
-example, it uses a more efficient representation for operation names and error
-flags than JSON-RPC. It also uses a human readable serialization format (in
-contrast to something like gRPC) to make it easy to interact with using standard
-tools like curl and Postman or to roll your own clients and servers for
-unsupported environments.
+example, it uses a more efficient representation for operation routing than
+JSON-RPC. It also uses a human-readable serialization format (in contrast to
+something like gRPC) to make it easy to interact with using standard tools like
+curl and Postman or to roll your own clients and servers for unsupported
+environments.
 
 ## Specification
 
@@ -101,11 +101,34 @@ following path: `/update-todo`.
 
 The operation input is expressed using the request body. The input is structured
 as a JSON object and should always be present even when there are no input
-parameters. The request should contain a content type header set to
+arguments. The request should contain a content type header set to
 `application/json`.
 
-> JSON is human readable which makes it easy to work with in a variety of
+> JSON is human-readable which makes it easy to work with in a variety of
 > settings. It is less performant than a binary representation like Protobuf but
 > we are biasing toward developer efficiency. Sending an empty object instead of
 > an empty request when there are no input parameters is also less performant
 > but simplifies implementation enough to prefer it on the first pass.
+
+### Result
+
+The operation result is expressed using the response body. The result is
+structured as a JSON object and should always be present. The result represents
+either success or failure and its type is determined by the value of the
+`result` field. If it is `ok`, the result represents the success value (the
+operation output), and if it is `err`, the result represents the failure value
+(the operation error). The output data will be contained in an `output` field
+and the error data will be contained in an `error` field, depending on the
+result.
+
+> It is less performant to put the result tag in the response body instead of in
+> a header or similar vehicle, but this lines up more closely with the
+> semantics of calling an in-memory function in that the discriminant is part of
+> the return value, not external to it.
+
+There are no restrictions on the content of the operation output except that it
+must be structured as a JSON object. The operation error is structured as a JSON
+object and must include a `code` field that contains a machine-readable error
+code. It may include a `message` field that contains a human-readable error
+message or other structured data. The request should contain a content type
+header set to `application/json`.
