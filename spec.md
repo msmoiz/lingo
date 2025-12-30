@@ -69,6 +69,10 @@ instance, a process might be a client for one operation and a server for
 another. In theory, it is even possible for the same process to be both the
 client and server for an operation.
 
+### Version
+
+The request must include an `x-lingo-version` header with a value of `1.0`.
+
 ### Routing
 
 #### Method
