@@ -136,3 +136,10 @@ object and must include a `code` field that contains a machine-readable error
 code. It may include a `message` field that contains a human-readable error
 message or other structured data. The request should contain a content type
 header set to `application/json`.
+
+### Status code
+
+The request should return an HTTP OK status code so long as there is no issue in
+sending the request or in receiving the response. This is the case even if the
+operation result is an error. Any other status code indicates an error at the
+transport layer.
