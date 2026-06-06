@@ -40,7 +40,7 @@ Content-Length: <variable>
 Request-Id: 333
 {
     "result": "err",
-    "err": {
+    "error": {
         "code": "todo_not_found",
         "todo_id": 12345
     }
