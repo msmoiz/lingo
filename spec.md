@@ -188,7 +188,7 @@ Server Error status code with no response body.
 
 ### Other errors
 
-The following conditions are also treated as transport errors:
+The following situations are also treated as transport errors:
 
 - _Unsupported operation:_ If an operation is not supported, it is surfaced as
   an HTTP Not Found status code.
