@@ -24,8 +24,7 @@ Content-Type: application/json
 Content-Length: <variable>
 Request-Id: 333
 {
-    "result": "ok",
-    "output": {}
+    "result": "ok"
 }
 ```
 
@@ -40,10 +39,8 @@ Content-Length: <variable>
 Request-Id: 333
 {
     "result": "err",
-    "error": {
-        "code": "todo_not_found",
-        "todo_id": 12345
-    }
+    "code": "todo_not_found",
+    "todo_id": 12345
 }
 ```
 

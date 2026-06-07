@@ -37,7 +37,7 @@ instance, it draws a clear distinction between the following scenarios which
 often get marked with the same error code:
 
 - _The endpoint does not exist_: This is a transportation error and returns a
-  HTTP Not Found error code.
+  HTTP Not Found status code.
 
 - _The entity does not exist_: This is an application error and returns an
   application-specific error code.
@@ -69,10 +69,6 @@ instance, a process might be a client for one operation and a server for
 another. In theory, it is even possible for the same process to be both the
 client and server for an operation.
 
-### Version
-
-The request must include an `x-lingo-version` header with a value of `1.0`.
-
 ### Routing
 
 #### Method
@@ -101,6 +97,17 @@ following path: `/update-todo`.
 > the server and intermediate infrastructure can route without parsing the
 > request body (this is a common complaint about JSON-RPC).
 
+### Authentication
+
+The request must include an `Authorization` header with a Bearer token. If the
+header is missing or the token is invalid, the server will return an HTTP
+Unauthorized status code.
+
+### Authorization
+
+If the caller is authenticated but is not permitted to invoke the operation, the
+server will return an HTTP Forbidden status code.
+
 ### Input
 
 The operation input is expressed using the request body. The input is structured
@@ -121,9 +128,8 @@ structured as a JSON object and should always be present. The result represents
 either success or failure and its type is determined by the value of the
 `result` field. If it is `ok`, the result represents the success value (the
 operation output), and if it is `err`, the result represents the failure value
-(the operation error). The output data will be contained in an `output` field
-and the error data will be contained in an `error` field, depending on the
-result.
+(the operation error). The output or error data is flattened directly into the
+result object alongside the `result` field.
 
 > It is less performant to put the result tag in the response body instead of in
 > a header or similar vehicle, but this lines up more closely with the
@@ -131,11 +137,12 @@ result.
 > the return value, not external to it.
 
 There are no restrictions on the content of the operation output except that it
-must be structured as a JSON object. The operation error is structured as a JSON
-object and must include a `code` field that contains a machine-readable error
-code. It may include a `message` field that contains a human-readable error
-message or other structured data. The request should contain a content type
-header set to `application/json`.
+must be structured as a JSON object and must not include a field named `result`.
+The operation error is structured as a JSON object and must include a `code`
+field that contains a machine-readable error code. It must similarly not include
+a field named `result`. It may include other structured data fields alongside
+`code`. The response should contain a content type header set to
+`application/json`.
 
 ### Status code
 
@@ -143,3 +150,47 @@ The request should return an HTTP OK status code so long as there is no issue in
 sending the request or in receiving the response. This is the case even if the
 operation result is an error. Any other status code indicates an error at the
 transport layer.
+
+### Input errors
+
+An input error can be surfaced as either an HTTP Bad Request status code or as
+an application error. The line is drawn using the in-memory test. If the shape
+of an input does not match the shape expected by the receiving function, because
+it is of the wrong type or is missing fields, a compiler for a statically typed
+language would catch the issue; the issue thus only arises in a transport
+context and so is treated as a transport error. If the shape is proper, but
+there is a semantic issue, a compiler would not catch it; it is treated as an
+application error.
+
+> The line is admittedly blurry here and depends in large part upon how you
+> choose to handle validation on the server. For instance, if a number field
+> must be between 10 and 20, you could validate it in the operation handler
+> (application error), but you could also theoretically validate it during
+> deserialization from JSON if you define the field as a newtype with validation
+> built into its construction (transport error). Neither error is automatically
+> retryable though, so in practice both types of errors are likely to be treated
+> similarly.
+
+### Internal errors
+
+An internal error is an unexpected failure that occurs during the execution of
+an operation. It is not part of the operation's error contract and its details
+should not be returned to the caller. The server will return an HTTP Internal
+Server Error status code with no response body.
+
+> This is an edge case where the in-memory test fails. There is no good analogue
+> for an internal error in the context of an in-memory function call: for the
+> most part, you can inspect an error that occurs in the same process, no matter
+> how deep the call stack. The concept of an opaque error that you cannot
+> inspect is an artifact of a distributed system. Therefore, we treat an
+> internal error as a transport error, even in cases where the operation handler
+> has been invoked and the transport itself is not at issue.
+
+### Other errors
+
+The following conditions are also treated as transport errors:
+
+- _Unsupported operation:_ If an operation is not supported, it is surfaced as
+  an HTTP Not Found status code.
+- _Rate limit exceeded:_ If the rate limit has been exceeded, it is surfaced as
+  an HTTP Too Many Requests status code.
